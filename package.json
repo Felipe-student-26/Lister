@@ -1,0 +1,97 @@
+{
+  "name": "lister",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "electron:dev": "vite build && electron .",
+    "electron:build": "vite build && electron-builder",
+    "cap:sync": "vite build && cap sync",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-lister \"vitest run --config vitest.rules.config.ts\"",
+    "functions:build": "npm --prefix functions install && npm --prefix functions run build",
+    "cap:android": "vite build && cap sync android",
+    "cap:open:android": "cap open android",
+    "android:assets": "capacitor-assets generate --android --assetPath resources",
+    "android:splash": "node scripts/android-splash.mjs",
+    "logo": "python3 scripts/make-logo.py"
+  },
+  "dependencies": {
+    "@capacitor/splash-screen": "^6.0.4",
+    "@fontsource/bubblegum-sans": "^5.3.0",
+    "@fontsource/dancing-script": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/lora": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "@simplewebauthn/browser": "^13.0.0",
+    "firebase": "^11.0.0",
+    "lucide-react": "^0.460.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/ios": "^6.1.0",
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "firebase-tools": "^13.29.0",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "^2.1.5"
+  },
+  "build": {
+    "appId": "com.lister.app",
+    "productName": "Lister",
+    "publish": null,
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    }
+  }
+}

@@ -1,0 +1,269 @@
+/* Documento imprimible del historial. Solo se ve al imprimir. Colores y fuentes fijos (no dependen del tema).
+   Unidades en pt/mm (no rem): el tamaño de letra del tema no debe cambiar la hoja. */
+.lp-root {
+  display: none;
+}
+
+@media print {
+  /* Margen 0: la franja rosa llega al borde del papel; el espacio de arriba/abajo lo dan el thead/tfoot de .lp-frame. */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    background-image: none !important;
+  }
+  /* se oculta toda la app y solo queda el documento */
+  body > #root {
+    display: none !important;
+  }
+
+  .lp-root {
+    display: block;
+    position: relative;
+    font-family: Arial, 'Liberation Sans', Helvetica, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #2d2730;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .lp-root * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-sizing: border-box;
+  }
+  .lp-root h1,
+  .lp-root h2,
+  .lp-root h3,
+  .lp-root p,
+  .lp-root dl,
+  .lp-root dd {
+    margin: 0;
+  }
+
+  /* franja rosa arriba y pie abajo, repetidos en cada página */
+  .lp-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 7mm;
+    background: linear-gradient(90deg, #f9c6d9, #e1477a 55%, #d6336c);
+  }
+  .lp-footer {
+    position: fixed;
+    bottom: 9mm;
+    left: 15mm;
+    right: 15mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2mm;
+    border-top: 0.4mm dotted #f3a6c2;
+    font-size: 7.5pt;
+    color: #8a7a85;
+  }
+  .lp-frame {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .lp-frame > thead,
+  .lp-frame > tfoot {
+    display: table-header-group;
+  }
+  .lp-frame > tfoot {
+    display: table-footer-group;
+  }
+  .lp-frame td {
+    padding: 0;
+  }
+  .lp-space-top {
+    height: 19mm;
+  }
+  .lp-space-bottom {
+    height: 24mm;
+  }
+  .lp-body {
+    padding: 0 15mm !important;
+    vertical-align: top;
+  }
+  .lp-footer-brand {
+    font-family: 'Bubblegum Sans', 'Nunito', sans-serif;
+    font-size: 10pt;
+    color: #d6336c;
+  }
+
+  .lp-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 2mm;
+  }
+  .lp-gen {
+    font-size: 8.5pt;
+    color: #8a7a85;
+  }
+  .lp-wave {
+    display: block;
+    width: 100%;
+    height: 3.5mm;
+    margin-bottom: 6mm;
+  }
+
+  /* Fechas de las consultas: letra bubble rosada (como el logo "Lister") */
+  .lp-date {
+    font-family: 'Bubblegum Sans', 'Nunito', system-ui, sans-serif;
+    font-weight: 400;
+    color: #d6336c;
+    text-shadow: 1.2px 1.2px 0 #f9c6d9;
+  }
+  /* Demás títulos: Arial en negrita, rosados */
+  .lp-title,
+  .lp-h2,
+  .lp-name {
+    font-family: Arial, 'Liberation Sans', Helvetica, sans-serif;
+    font-weight: 700;
+    color: #d6336c;
+  }
+  .lp-title {
+    font-size: 24pt;
+    line-height: 1.15;
+    margin-bottom: 5mm;
+  }
+  .lp-h2 {
+    font-size: 16pt;
+    margin: 7mm 0 3mm;
+    break-after: avoid;
+  }
+  .lp-name {
+    font-size: 14pt;
+    margin-bottom: 2.5mm;
+  }
+
+  /* Datos del paciente */
+  .lp-card {
+    border: 0.5mm solid #f6cad9;
+    border-radius: 5mm;
+    background: #fff7fa;
+    padding: 5mm 6mm;
+    break-inside: avoid;
+  }
+  .lp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5mm 6mm;
+  }
+  .lp-grid dt,
+  .lp-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #be185d;
+  }
+  .lp-grid dd {
+    font-size: 10pt;
+    color: #2d2730;
+    overflow-wrap: anywhere;
+  }
+  .lp-general {
+    margin-top: 3.5mm;
+    padding-top: 3mm;
+    border-top: 0.4mm dotted #f3a6c2;
+  }
+
+  /* Resumen */
+  .lp-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3mm;
+    margin-top: 5mm;
+    break-inside: avoid;
+  }
+  .lp-stat {
+    border-radius: 4mm;
+    background: #fdecf3;
+    padding: 2.5mm 3mm;
+    text-align: center;
+  }
+  .lp-stat b {
+    display: block;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #9d174d;
+    line-height: 1.25;
+  }
+  .lp-stat span {
+    font-size: 7pt;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8a7a85;
+  }
+
+  /* Consultas */
+  .lp-session {
+    margin-bottom: 5mm;
+    padding: 0 0 3mm 5mm;
+    border-left: 1.2mm solid #f3a6c2;
+    position: relative;
+  }
+  .lp-session::before {
+    content: '';
+    position: absolute;
+    left: -2.6mm;
+    top: 1.2mm;
+    width: 4mm;
+    height: 4mm;
+    border-radius: 50%;
+    background: #e1477a;
+    border: 0.8mm solid #fff;
+  }
+  .lp-session-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4mm;
+    margin-bottom: 2mm;
+    break-after: avoid;
+  }
+  .lp-date {
+    font-size: 14pt;
+  }
+  .lp-chip {
+    flex-shrink: 0;
+    border-radius: 99mm;
+    padding: 0.8mm 3.2mm;
+    font-size: 8pt;
+    font-weight: 600;
+    border: 0.35mm solid #f3a6c2;
+    color: #9d174d;
+    background: #fff;
+  }
+  .lp-chip-mejor {
+    background: #e1477a;
+    border-color: #e1477a;
+    color: #fff;
+  }
+  .lp-chip-peor {
+    background: #fff1f2;
+    border-color: #e11d48;
+    color: #9f1239;
+  }
+  .lp-field {
+    margin-top: 2.2mm;
+  }
+  /* la etiqueta nunca queda sola al final de una página; el texto largo sí puede continuar en la siguiente */
+  .lp-field .lp-label {
+    break-after: avoid;
+  }
+  .lp-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    orphans: 3;
+    widows: 3;
+  }
+}

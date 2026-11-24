@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#e1477a" />
+    <title>Lister</title>
+    <script>
+      // Marca "celular" antes del primer pintado: solo ahí se muestra el splash incrustado (en PC el preloader sale al iniciar sesión).
+      (function () {
+        if (window.Capacitor || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) document.documentElement.classList.add('is-mobile');
+      })();
+    </script>
+    <style>
+      /* Splash / preloader de pantalla completa (rosado + blanco). Lo usan este HTML (antes de que cargue React, solo celular)
+         y src/components/Splash.tsx (celular al abrir la app, PC al iniciar sesión). Mantener ambos con las mismas clases. */
+      .boot-splash { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+        background: linear-gradient(135deg, #ee6a97 0%, #d6336c 100%); color: #fff; transition: opacity 0.35s ease, visibility 0.35s; }
+      .boot-splash--inline { display: none; }
+      html.is-mobile .boot-splash--inline { display: flex; }
+      .boot-splash--out { opacity: 0; visibility: hidden; pointer-events: none; }
+      .boot-splash--in { animation: boot-fade 0.3s ease both; }
+      .boot-splash img { width: min(62vw, 340px); height: auto; user-select: none; -webkit-user-drag: none; animation: boot-breathe 2.4s ease-in-out infinite; }
+      .boot-bar { width: min(40vw, 160px); height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.3); overflow: hidden; }
+      .boot-bar::after { content: ''; display: block; height: 100%; width: 40%; border-radius: inherit; background: #fff; animation: boot-slide 1.1s ease-in-out infinite; }
+      @keyframes boot-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+      @keyframes boot-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+      @keyframes boot-fade { from { opacity: 0; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .boot-splash img, .boot-bar::after, .boot-splash--in { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- React reemplaza este contenido al montar -->
+      <div class="boot-splash boot-splash--inline" role="status" aria-label="Cargando Lister">
+        <img src="./lister-logo-white.svg" alt="Lister" draggable="false" />
+        <div class="boot-bar" aria-hidden="true"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

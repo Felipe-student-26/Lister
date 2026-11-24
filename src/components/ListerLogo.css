@@ -1,0 +1,26 @@
+/* Logo de Lister: "Liste" en letra bubble + una "r" cuya punta de adelante baja en una flecha (como si se fuera a convertir en una "n": "listen").
+   Colores fijos (no dependen del tema) para que el documento impreso siempre se vea igual. */
+.lister-logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: 'Bubblegum Sans', 'Nunito', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 30pt;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: #d6336c;
+  text-shadow: 1.5px 1.5px 0 #f9c6d9;
+  white-space: nowrap;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.lister-logo-r {
+  display: inline-block;
+  width: 0.56em;
+  height: 0.444em;
+  margin-left: 0.03em;
+  /* la base del dibujo (línea base de la r) queda sobre la línea base del texto; arriba llega a la altura de las minúsculas */
+  vertical-align: -0.021em;
+  overflow: visible;
+  filter: drop-shadow(1.5px 1.5px 0 #f9c6d9);
+}

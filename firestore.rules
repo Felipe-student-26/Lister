@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Perfil y rol ─────────────────────────────────────────────────────────────
+    // users/{uid} = { role: 'admin' | 'therapist', ownerId, email, ... }
+    //   admin     = administrador de la plataforma: gestiona terapeutas y NO ve datos clínicos.
+    //   therapist = dueña de sus datos (ownerId == su propio uid): crea, edita y elimina pacientes y citas.
+    // Sin documento = sin acceso (ya no existe el "sin documento = admin" del modelo anterior).
+    function signedIn() { return request.auth != null; }
+    function hasProfile() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function role() { return hasProfile() ? profile().role : 'none'; }
+    function isAdmin() { return signedIn() && role() == 'admin'; }
+    // Una terapeuta solo cuenta si su perfil apunta a SU PROPIO uid: un perfil mal migrado (ownerId ajeno) no da acceso.
+    function isTherapist() { return signedIn() && role() == 'therapist' && profile().ownerId == request.auth.uid; }
+
+    // ── Datos clínicos: SOLO la terapeuta dueña (leer, crear, editar y eliminar) ─────────────────────────────
+    // El admin de la plataforma no entra aquí: no hay ninguna regla que le dé acceso.
+    function clinical(col) { return col in ['clients', 'appointments', 'sessions', 'observations']; }
+    function ownsExisting() { return isTherapist() && resource.data.ownerId == request.auth.uid; }
+    function ownsNew() { return isTherapist() && request.resource.data.ownerId == request.auth.uid; }
+    function ownerUnchanged() { return request.resource.data.ownerId == resource.data.ownerId; }
+
+    // Notas personales de la terapeuta (mural `notes` y libro `bookPages`): mismas reglas de propiedad; no son datos clínicos.
+    function personal(col) { return col in ['notes', 'bookPages']; }
+    function owned(col) { return clinical(col) || personal(col); }
+
+    match /{col}/{docId} {
+      allow read: if owned(col) && ownsExisting();
+      allow create: if owned(col) && ownsNew();
+      allow update: if owned(col) && ownsExisting() && ownerUnchanged();
+      allow delete: if owned(col) && ownsExisting();
+    }
+
+    // ── Anamnesis (formulario que llena el paciente) ─────────────────────────────────────────────────────────────
+    // anamnesisForms/{token}: el id del documento es un token secreto (128 bits) que va en el enlace que recibe el paciente.
+    //  - La terapeuta dueña lee, crea, edita y elimina los suyos (son datos clínicos: el admin de la plataforma no entra).
+    //  - Quien tiene el enlace (sin sesión) solo puede:
+    //      · LEER ese documento mientras esté "pending" (para mostrar el nombre); nunca listar y nunca leer uno "completed".
+    //      · ACTUALIZARLO una vez: de "pending" a "completed", tocando solo answers, status y submittedAt.
+    //    No puede crear ni borrar. Con el documento "completed" ya no puede leerlo ni cambiarlo.
+    function validAnswerSubmit() {
+      let d = request.resource.data;
+      return resource.data.status == 'pending'
+        && d.status == 'completed'
+        && d.diff(resource.data).affectedKeys().hasOnly(['answers', 'status', 'submittedAt'])
+        && d.answers is map && d.answers.size() <= 400
+        && d.submittedAt is int;
+    }
+    match /anamnesisForms/{token} {
+      allow get: if resource.data.status == 'pending';
+      allow read: if ownsExisting();
+      allow create: if ownsNew() && request.resource.data.status == 'pending' && request.resource.data.answers.size() == 0;
+      allow update: if validAnswerSubmit() || (ownsExisting() && ownerUnchanged());
+      allow delete: if ownsExisting();
+    }
+
+    // ── Solo Admin SDK (Cloud Functions) ─────────────────────────────────────────────────────────────────────
+    // Bloqueo de intentos, credenciales de passkeys y desafíos WebAuthn: ningún cliente lee ni escribe.
+    // (Ya los negaría la ausencia de reglas; se explicitan para que nadie los abra por accidente.)
+    match /loginAttempts/{id} { allow read, write: if false; }
+    match /passkeyChallenges/{id} { allow read, write: if false; }
+    match /passkeys/{document=**} { allow read, write: if false; }
+
+    // ── Perfil profesional de la terapeuta (datos que llena el administrador) ───────────────────────────────
+    // therapistProfiles/{uid}: el admin lee y escribe cualquiera (nombre y correo no pueden quedar vacíos);
+    // la terapeuta solo LEE el suyo y no puede escribirlo. No es un dato clínico.
+    function optText(k, max) { return !(k in request.resource.data) || (request.resource.data[k] is string && request.resource.data[k].size() <= max); }
+    function validProfile() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fullName', 'email', 'phone', 'idNumber', 'birthDate', 'specialty', 'licenseNumber', 'officeAddress', 'city', 'yearsExperience', 'bio', 'createdAt', 'updatedAt'])
+        && d.fullName is string && d.fullName.size() > 0 && d.fullName.size() <= 120
+        && d.email is string && d.email.size() > 0 && d.email.size() <= 120
+        && optText('phone', 80) && optText('idNumber', 80) && optText('birthDate', 80) && optText('specialty', 80)
+        && optText('licenseNumber', 80) && optText('officeAddress', 200) && optText('city', 80)
+        && optText('yearsExperience', 80) && optText('bio', 600);
+    }
+    match /therapistProfiles/{uid} {
+      allow get: if isAdmin() || (isTherapist() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && validProfile();
+      allow delete: if isAdmin();
+    }
+
+    // ── Perfiles ─────────────────────────────────────────────────────────────────
+    // Modelo Spark (sin Cloud Functions): el administrador crea y elimina terapeutas desde el cliente.
+    // Cada quien lee el suyo; el admin lista las terapeutas (la consulta debe filtrar role == 'therapist').
+    //  - create: solo el admin, y solo un documento de terapeuta válido (role 'therapist', ownerId == docId, email no vacío y
+    //    ningún campo extra). Como el documento de un admin ya existe, no se puede "recrear" (eso sería un update).
+    //  - update: nadie. Ni la terapeuta puede promoverse ni el admin cambiar roles u ownerId.
+    //  - delete: solo el admin y solo a una terapeuta: no borra a otro admin ni a sí mismo.
+    // (Si el cliente pudiera escribir users/{uid} sin estas condiciones, bastaría crear users/<otra persona> para degradarla o dar acceso.)
+    function validNewTherapistAccount(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['role', 'ownerId', 'email', 'createdAt'])
+        && d.role == 'therapist'
+        && d.ownerId == uid
+        && d.email is string && d.email.size() > 0
+        && (!('createdAt' in d) || d.createdAt is number);
+    }
+    match /users/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if isAdmin() && resource.data.role == 'therapist';
+      allow create: if isAdmin() && validNewTherapistAccount(uid);
+      allow update: if false;
+      allow delete: if isAdmin() && resource.data.role == 'therapist';
+    }
+  }
+}
